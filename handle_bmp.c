@@ -17,9 +17,6 @@ void initializeRGB(bmp_image *i, int w, int h)
     i->B = B;
 }
 
-/*
- * filename must be like "./filename.bmp"
- */
 BMP_file *readBMP_file(const char *filename)
 {
     FILE *f;
@@ -119,8 +116,11 @@ void writeFile(FILE *newF, BMP_file *bmp, const int DESP_R, const int DESP_G, co
         for (int j = 0; j < bmp->h.width; j++)
         {
             newB = (bmp->i.B[i][j] + DESP_B) % 255;
+            if (newB < 0) newB += 255;
             newG = (bmp->i.G[i][j] + DESP_G) % 255;
+            if (newG < 0) newG += 255;
             newR = (bmp->i.R[i][j] + DESP_R) % 255;
+            if (newR < 0) newR += 255;
             fwrite(&newB, sizeof(char), 1, newF);
             fwrite(&newG, sizeof(char), 1, newF);
             fwrite(&newR, sizeof(char), 1, newF);
@@ -128,7 +128,7 @@ void writeFile(FILE *newF, BMP_file *bmp, const int DESP_R, const int DESP_G, co
     }
 }
 
-FILE *createNewFile(const char *file_name)
+FILE *createNewFile(const char *file_name, const char* type_file)
 {
     struct stat st = {0};
     if (stat("./new_files", &st) == -1)
@@ -138,7 +138,7 @@ FILE *createNewFile(const char *file_name)
 
     // CREATING FILE
     FILE *newF;
-    char *new_name = getNewEncryptedName(file_name);
+    char *new_name = getNewName(file_name, type_file);
 
     if ((newF = fopen(new_name, "w")) == NULL)
     {
@@ -151,30 +151,14 @@ FILE *createNewFile(const char *file_name)
     return newF;
 }
 
-char *getNewEncryptedName(const char* file_name){
-    int newSizeWord = strlen(file_name) + 2 + strlen(NEW_FILES_DIR); //_c
+char *getNewName(const char* file_name, const char *end_file){
+    int newSizeWord = strlen(file_name) + 2; //_c or _r
     char *full_new_name = (char*)malloc(sizeof(char)*newSizeWord);
     for(int i = 0; i < newSizeWord; i++)
         full_new_name[i] = '\0';
     char **splittedName = split(file_name, '.');
-    strcat(full_new_name, NEW_FILES_DIR);
     strcat(full_new_name, splittedName[0]);
-    strcat(full_new_name, "_c.");
-    strcat(full_new_name, splittedName[1]);
-
-    freeSplitted(splittedName);
-    return full_new_name;
-}
-
-char *getNewDecryptedName(const char* file_name){
-    int newSizeWord = strlen(file_name) + 2 + strlen(NEW_FILES_DIR); //_c
-    char *full_new_name = (char*)malloc(sizeof(char)*newSizeWord);
-    for(int i = 0; i < newSizeWord; i++)
-        full_new_name[i] = '\0';
-    char **splittedName = split(file_name, '.');
-    strcat(full_new_name, NEW_FILES_DIR);
-    strcat(full_new_name, splittedName[0]);
-    strcat(full_new_name, "_c.");
+    strcat(full_new_name, end_file);
     strcat(full_new_name, splittedName[1]);
 
     freeSplitted(splittedName);

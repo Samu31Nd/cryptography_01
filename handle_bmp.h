@@ -6,6 +6,8 @@
 
 #define ROOT "./"
 #define NEW_FILES_DIR "./new_files/"
+#define _C_ "_c."
+#define _R_ "_r."
 
 typedef struct {
   char bm[2];
@@ -37,9 +39,8 @@ typedef struct {
 
 void freeBMP(BMP_file*);
 void printHeader(BMP_file*);
-FILE *createNewFile(const char*);
+FILE *createNewFile(const char*, const char*);
 BMP_file *readBMP_file(const char*);
-char *getNewEncryptedName(const char*);
+char *getNewName(const char*, const char*);
 void initializeRGB(bmp_image*, int, int);
-char *getNewDecryptedName(const char* file_name);
 void writeFile(FILE*, BMP_file*, const int, const int, const int);
