@@ -1,42 +1,74 @@
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ncurses.h>
+#include <dirent.h>
 #include "handle_bmp.h"
 #include "utils.h"
+#include "functions.h"
+#define ext ".bmp"
+#define maxFiles 5
 
-#define DESP_R 100
-#define DESP_G 200
-#define DESP_B 50
-#define FILE_NAME "plantita.bmp"
+void menu(void);
 
-errcode encryptBMPFile(char*);
-errcode decryptBMPFile(char*);
+int main (int argc, char const *argv[]) {
+    initscr();
+    cbreak();
+    keypad(stdscr, TRUE);
+    noecho();
+    curs_set(1);
+    init_colors();
 
-int main(int argc, char *argv[]) {
-  //decryptBMPFile(FILE_NAME);
-  encryptBMPFile(FILE_NAME);
-  return 0;
+    menu();
+    endwin();
+    return 0;
 }
 
-errcode decryptBMPFile(char* file_name){
-  BMP_file *bmp = readBMP_file(file_name);
-  printHeader(bmp);
-  //NOW SAVE FILE
+void menu (void) {
+    int ch = 0, pos = 0;
+    int R,G,B;
+    int fileCount = 0;
+    char despR[4] = {0};
+    char despG[4] = {0};
+    char despB[4] = {0};
+    char *files[maxFiles];
 
-  FILE *newF = createNewFile(file_name,_R_);
-  //WRITING HEADER
-  writeFile(newF, bmp, DESP_R*-1, DESP_G*-1, DESP_B*-1);
-  fclose(newF);
-  freeBMP(bmp);
-  return _NO_ERR;
-}
+    getFiles(files, &fileCount);
+    int selectedFile = selectMenu(files, fileCount);
+    int selection = cyphDesyphMenu();
 
-errcode encryptBMPFile(char* file_name){
-  BMP_file *bmp = readBMP_file(file_name);
-  printHeader(bmp);
-  //NOW SAVE FILE
+    clear();
 
-  FILE *newF = createNewFile(file_name,_C_);
-  //WRITING HEADER
-  writeFile(newF, bmp, DESP_R, DESP_G, DESP_B);
-  fclose(newF);
-  freeBMP(bmp);
-  return _NO_ERR;
+    if (selection == 1) {                       
+        R = shiftValues("R", despR, pos, ch, 4);
+        G = shiftValues("G", despG, pos, ch, 3);
+        B = shiftValues("B", despB, pos, ch, 5);
+        if (R == 0 || G == 0 || B == 0) {
+            errorScreen();
+            return;
+        }
+        encryptBMPFile(files[selectedFile], R, G, B);
+    } else if (selection == 2) {                
+        R = shiftValues("R", despR, pos, ch, 3);
+        G = shiftValues("G", despG, pos, ch, 4);
+        B = shiftValues("B", despB, pos, ch, 5);
+        if (R == 0 || G == 0 || B == 0) {
+            errorScreen();
+            return;
+        }
+        decryptBMPFile(files[selectedFile], R, G, B);
+    }
+
+    clear();
+
+    attron(COLOR_PAIR(3));
+    box(stdscr, 0, 0);
+    printEndscreen();
+    attroff(COLOR_PAIR(3));
+    refresh();
+
+    for (int i = 0; i < fileCount; i++)
+        free(files[i]);
+    getch();
+    return;
 }
