@@ -1,20 +1,27 @@
 #include "handle_bmp.h"
 #include "utils.h"
 
-void initializeRGB(bmp_image *i, int w, int h)
-{
-    char **R = (char **)malloc(sizeof(char *) * h);
-    char **G = (char **)malloc(sizeof(char *) * h);
-    char **B = (char **)malloc(sizeof(char *) * h);
-    for (int i = 0; i < h; i++)
-    {
-        R[i] = (char *)malloc(sizeof(char) * w);
-        G[i] = (char *)malloc(sizeof(char) * w);
-        B[i] = (char *)malloc(sizeof(char) * w);
+int initializeRGB(bmp_image *i, int w, int h) {
+    i->R = (char **)malloc(sizeof(char *) * h);
+    i->G = (char **)malloc(sizeof(char *) * h);
+    i->B = (char **)malloc(sizeof(char *) * h);
+
+    if (!i->R || !i->G || !i->B) {
+        freeRGB(i, h);
+        return -1;
     }
-    i->R = R;
-    i->G = G;
-    i->B = B;
+
+    for (int j = 0; j < h; j++) {
+        i->R[j] = (char *)malloc(sizeof(char) * w);
+        i->G[j] = (char *)malloc(sizeof(char) * w);
+        i->B[j] = (char *)malloc(sizeof(char) * w);
+
+        if (!i->R[j] || !i->G[j] || !i->B[j]) {
+            freeRGB(i, j);
+            return -1;
+        }
+    }
+    return 0; // Éxito
 }
 
 BMP_file *readBMP_file(const char *filename)
@@ -22,8 +29,7 @@ BMP_file *readBMP_file(const char *filename)
     FILE *f;
     if ((f = fopen(filename, "r")) == NULL)
     {
-        fprintf(stderr, "Error al abrir el archivo!");
-        fclose(f);
+        fprintf(stderr, RED "Error al abrir el archivo BMP: " RESET "No se encontro el archivo " YELLOW"[%s]"RESET"\n",filename);
         exit(-1);
     }
     BMP_file *bmp = (BMP_file *)malloc(sizeof(BMP_file));
@@ -45,7 +51,10 @@ BMP_file *readBMP_file(const char *filename)
     fread(&bmp->h.used_colors, sizeof(int), 1, f);
     fread(&bmp->h.important_colors, sizeof(int), 1, f);
 
-    initializeRGB(&bmp->i, bmp->h.width, bmp->h.height);
+    if ( (initializeRGB(&bmp->i, bmp->h.width, bmp->h.height)) != 0){
+        fprintf(stderr, RED "Error al usar malloc: " RESET "No se pudo asignar memoria.\n");
+        exit(-1);
+    }
 
     for (int i = 0; i < bmp->h.height; i++)
     {
@@ -62,34 +71,41 @@ BMP_file *readBMP_file(const char *filename)
 
 void printHeader(BMP_file *bmp)
 {
-    printf("BM: %c%c\n", bmp->h.bm[0], bmp->h.bm[1]);
-    printf("Size: %d\n", bmp->h.size);
-    printf("Reservado: %d\n", bmp->h.reservated);
-    printf("Offset: %d\n", bmp->h.offset);
-    printf("Size Metadata: %d\n", bmp->h.sizeMetadata);
-    printf("Size (height, width): (%d,%d)\n", bmp->h.height, bmp->h.width);
-    printf("Numero planos: %d\n", bmp->h.no_planes);
-    printf("Profundidad color: %d\n", bmp->h.deep_color);
-    printf("Tamaño struct: %d\n", bmp->h.size_struct);
-    printf("Resolucion: (%d,%d)\n", bmp->h.pxmv, bmp->h.pxmh);
-    printf("Colores usados: %d\n", bmp->h.used_colors);
-    printf("Colores importantes: %d\n", bmp->h.important_colors);
+    printf("\n-------------=="YELLOW " HEADER " RESET "==-------------\n");
+    printf(YELLOW "  BM: "RESET "%c%c\n", bmp->h.bm[0], bmp->h.bm[1]);
+    printf(YELLOW "  Size: "RESET "%d\n", bmp->h.size);
+    printf(YELLOW "  Reservado: "RESET "%d\n", bmp->h.reservated);
+    printf(YELLOW "  Offset: "RESET "%d\n", bmp->h.offset);
+    printf(YELLOW "  Size Metadata: "RESET "%d\n", bmp->h.sizeMetadata);
+    printf(YELLOW "  Size (height, width): "RESET "(%d,%d)\n", bmp->h.height, bmp->h.width);
+    printf(YELLOW "  Numero planos: "RESET "%d\n", bmp->h.no_planes);
+    printf(YELLOW "  Profundidad color: "RESET "%d\n", bmp->h.deep_color);
+    printf(YELLOW "  Tamaño struct: "RESET "%d\n", bmp->h.size_struct);
+    printf(YELLOW "  Resolucion: "RESET "(%d,%d)\n", bmp->h.pxmv, bmp->h.pxmh);
+    printf(YELLOW "  Colores usados: "RESET "%d\n", bmp->h.used_colors);
+    printf(YELLOW "  Colores importantes: "RESET "%d\n", bmp->h.important_colors);
+    printf("--------------------------------------\n");
 }
 
 void freeBMP(BMP_file *bmp)
 {
-    printf("Erasing memory...\n");
-    for (int j = 0; j < bmp->h.height; j++)
-    {
-        free(bmp->i.R[j]);
-        free(bmp->i.G[j]);
-        free(bmp->i.B[j]);
-    }
-    free(bmp->i.R);
-    free(bmp->i.G);
-    free(bmp->i.B);
+    freeRGB(&bmp->i, bmp->h.height);
     free(bmp);
-    printf("Erased!\n");
+}
+
+void freeRGB(bmp_image *i, int h) {
+    if (i->R) {
+        for (int j = 0; j < h; j++) free(i->R[j]);
+        free(i->R);
+    }
+    if (i->G) {
+        for (int j = 0; j < h; j++) free(i->G[j]);
+        free(i->G);
+    }
+    if (i->B) {
+        for (int j = 0; j < h; j++) free(i->B[j]);
+        free(i->B);
+    }
 }
 
 void writeFile(FILE *newF, BMP_file *bmp, const int DESP_R, const int DESP_G, const int DESP_B)
@@ -143,7 +159,7 @@ FILE *createNewFile(const char *file_name, const char* type_file)
     if ((newF = fopen(new_name, "w")) == NULL)
     {
         printf("[NAME: %s]\n", new_name);
-        fprintf(stderr, "Error al abrir el archivo!");
+        fprintf(stderr, RED "Error al intentar crear el archivo BMP: " YELLOW"[%s]"RESET"\n",new_name);
         fclose(newF);
         exit(-1);
     }

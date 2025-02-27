@@ -5,9 +5,12 @@
 #include <sys/types.h>
 
 #define ROOT "./"
-#define NEW_FILES_DIR "./new_files/"
 #define _C_ "_c."
 #define _R_ "_r."
+
+#define RED "\x1b[31m"
+#define RESET "\x1b[0m"
+#define YELLOW "\x1b[33m"
 
 typedef struct {
   char bm[2];
@@ -39,8 +42,9 @@ typedef struct {
 
 void freeBMP(BMP_file*);
 void printHeader(BMP_file*);
-FILE *createNewFile(const char*, const char*);
+void freeRGB(bmp_image *, int);
 BMP_file *readBMP_file(const char*);
+int initializeRGB(bmp_image*, int, int);
 char *getNewName(const char*, const char*);
-void initializeRGB(bmp_image*, int, int);
+FILE *createNewFile(const char*, const char*);
 void writeFile(FILE*, BMP_file*, const int, const int, const int);

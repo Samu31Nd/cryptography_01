@@ -4,13 +4,13 @@
 #define DESP_R 100
 #define DESP_G 200
 #define DESP_B 50
-#define FILE_NAME "plantita_c_r.bmp"
+#define FILE_NAME "plantita.bmp"
 
 errcode encryptBMPFile(char*);
 errcode decryptBMPFile(char*);
 
 int main(int argc, char *argv[]) {
-  decryptBMPFile(FILE_NAME);
+  //decryptBMPFile(FILE_NAME);
   encryptBMPFile(FILE_NAME);
   return 0;
 }
